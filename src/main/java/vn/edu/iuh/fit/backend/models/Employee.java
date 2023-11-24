@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import vn.edu.iuh.fit.backend.enums.EmployeeStatus;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
@@ -116,6 +117,12 @@ public class Employee {
 
     public void setLstOrder(List<Order> lstOrder) {
         this.lstOrder = lstOrder;
+    }
+
+
+    public String getDobString(){
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        return formatter.format(dob);
     }
 
     @Override

@@ -1,0 +1,21 @@
+<nav class="navbar navbar-expand-sm navbar-light bg-light">
+
+  <div class="collapse navbar-collapse" id="collapsibleNavId">
+    <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+        <li class="nav-item active">
+          <a class="nav-link btn btn-outline-success" href="/">Home Page</span></a>
+        </li>
+        <li class="nav-item active ml-3">
+            <a class="nav-link btn btn-outline-success" th:href="@{/client/products}">Product List</span></a>
+        </li>
+    </ul>
+
+    <div class="form-inline my-2 my-lg-0">
+      <a class="btn btn-success text-white" type="submit"
+         th:href="@{/client/carts}"
+      >
+          Cart (<th:block th:text="${session.carts != null && session.carts.size() > 0 ? session.carts.size() : 0}">0</th:block>)
+      </a>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"  xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+</head>
+<body>
+    <div th:replace="parts/NavbarAdmin"></div>
+    <h3 class="text-center py-5">Order List</h3>
+    <table class="table table-striped">
+      <thead class="thead-inverse">
+        <tr>
+          <th>Order ID</th>
+          <th>Order Date</th>
+          <th>Employee ID</th>
+          <th>Employee Name</th>
+          <th>Customer ID</th>
+          <th>Customer Name</th>
+          <th>Total Prices</th>
+          <th>
+            <a class="btn btn-success" th:href="@{/admin/orders/add}"
+            >
+              Add New Order
+            </a>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="obj : ${orderLists}">
+          <td scope="row" th:text="${obj.order.order_id}"></td>
+          <td th:text="${obj.order.orderDate}"></td>
+          <td th:text="${obj.order.employee.id}"></td>
+          <td th:text="${obj.order.employee.fullname}"></td>
+          <td th:text="${obj.order.customer.id}"></td>
+          <td th:text="${obj.order.customer.name}"></td>
+          <td th:text="${obj.totalPrice}"></td>
+          <td>
+              <a class="btn btn-primary" th:href="@{/admin/order-details/{id}(id=${obj.order.order_id})}">Order Details</a>
+              <a class="btn btn-warning" th:href="@{/admin/orders/edit/{id}(id=${obj.order.order_id})}">Edit</a>
+              <a class="btn btn-danger" th:href="@{/admin/orders/delete/{id}(id=${obj.order.order_id})}">Delete</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div>
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                <li th:class="page-item + ' ' + (${products.number == 0} ? disabled)">
+                    <a class="page-link" th:href="@{/admin/orders(page=${products.number}, size=${products.size})}">Previous</a>
+                </li>
+                <li class="page-item" th:each="page : ${pagesFirst}">
+                    <a class="page-link" th:href="@{/admin/orders(page=${page}, size=${products.size})}" th:text="${page}"></a>
+                </li>
+                <li class="page-item" th:if="${showFirst}"><span class="page-link">...</span></li>
+                <li th:class="page-item + ' ' + (${products.number + 1 == page} ? active)" th:each="page : ${pagesCurrent}">
+                    <a class="page-link" th:href="@{/admin/orders(page=${page}, size=${products.size})}" th:text="${page}"></a>
+                </li>
+                <li class="page-item" th:if="${showLast}"><span class="page-link">...</span></li>
+                <li class="page-item" th:each="page : ${pagesLast}">
+                    <a class="page-link" th:href="@{/admin/orders(page=${page}, size=${products.size})}" th:text="${page}"></a>
+                </li>
+                <li th:class="page-item + ' ' + (${products.totalPages == products.number + 1} ? disabled)">
+                    <a class="page-link" th:href="@{/admin/orders(page=${products.number + 2}, size=${products.size})}">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

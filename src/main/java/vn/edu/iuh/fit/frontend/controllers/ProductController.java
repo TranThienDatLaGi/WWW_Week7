@@ -1,76 +1,105 @@
 package vn.edu.iuh.fit.frontend.controllers;
 
-import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
+import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+import vn.edu.iuh.fit.backend.dto.ProductWithNewestPrice;
+import vn.edu.iuh.fit.backend.enums.ProductStatus;
 import vn.edu.iuh.fit.backend.models.Product;
+import vn.edu.iuh.fit.backend.models.ProductPrice;
+import vn.edu.iuh.fit.backend.repositories.ProductImageRepository;
+import vn.edu.iuh.fit.backend.repositories.ProductPriceRepository;
 import vn.edu.iuh.fit.backend.repositories.ProductRepository;
-import vn.edu.iuh.fit.backend.services.ProductServices;
+import vn.edu.iuh.fit.backend.services.ProductService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Controller
-@RequestMapping("/admin")
+@RequestMapping("/admin/products")
+@AllArgsConstructor
 public class ProductController {
-    @Autowired
-    private ProductServices productServices;
-    @Autowired
     private ProductRepository productRepository;
+    private ProductService productService;
+    private ProductPriceRepository productPriceRepository;
+    private Environment environment;
+    private ProductImageRepository productImageRepository;
 
-    @GetMapping("/products")
+
+    @GetMapping("")
     public String showProductListPaging(
-            HttpSession session,
             Model model,
             @RequestParam("page") Optional<Integer> page,
-            @RequestParam("size") Optional<Integer> size) {
+            @RequestParam("size") Optional<Integer> size)
+    {
+        int pageNum = page.orElse(1);
+        int sizeNum = size.orElse(10);
 
-        session.setAttribute("sample","this is sample");
-        int currentPage = page.orElse(1);
-        int pageSize = size.orElse(10);
+        Page<Product> products = productService.findPaginatedSortByIndex(pageNum - 1,
+                sizeNum, "product_id", "asc");
 
-        Page<Product> candidatePage = productServices.findPaginatedSortByIndex(currentPage - 1,
-                pageSize, "product_id", "asc");
+//        Start Handle Pagination
+        int currentPage = products.getNumber() + 1;
+        int totalPages = products.getTotalPages();
 
-        model.addAttribute("productPage", candidatePage);
+        int start = Math.max(1, currentPage - 1);
+        int end = Math.min(totalPages, start + 2);
 
-        int totalPages = candidatePage.getTotalPages();
-        if (totalPages > 0) {
-            List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
-                    .boxed()
-                    .collect(Collectors.toList());
-            model.addAttribute("pageNumbers", pageNumbers);
+        if (totalPages == end)
+            start -= 1;
+
+        model.addAttribute("pagesFirst", IntStream.range(1, Math.min(4, start)).boxed().toList());
+        model.addAttribute("showFirst", start > 4);
+        model.addAttribute("pagesCurrent", IntStream.range(start, end + 1).boxed().toList());
+        model.addAttribute("showLast", end < Math.max(end + 1, totalPages - 2) - 1);
+        model.addAttribute("pagesLast", IntStream.range(Math.max(end + 1, totalPages - 2), totalPages + 1).boxed().toList());
+//        End Handle Pagination
+        model.addAttribute("products", products);
+
+        List<ProductWithNewestPrice> productDTO = new ArrayList<>();
+        for (Product p : products){
+            ProductPrice productPrice = productPriceRepository
+                    .findProductPriceNewestByProductID(p.getProduct_id()).orElse(null);
+            if (productPrice != null){
+                productDTO.add(new ProductWithNewestPrice(p, productPrice));
+            }
         }
-        return "admin/product/listing";
+        model.addAttribute("products", products);
+        model.addAttribute("productWithNewestPrices", productDTO);
+        return "admin/products/Products";
     }
-
-    @GetMapping("/products/show-add-form")
-    public String add(Model model) {
-        Product product = new Product();
-        model.addAttribute("product", product);
-        return "admin/product/add-form";
+    @GetMapping("/delete/{id}")
+    public String handleHiddenProduct(@PathVariable("id") long productID){
+        productService.hiddenProduct(productID);
+        return "redirect:/admin/products";
     }
-
-    @PostMapping("/products/add")
-    public String addCandidate(
-            @ModelAttribute("product") Product product,
-            BindingResult result, Model model) {
-        productRepository.save(product);
-        return "redirect:/products";
+    @GetMapping("/edit/{id}")
+    public ModelAndView handleOpenProductEditPage(@PathVariable("id") long productID){
+        ModelAndView modelAndView = new ModelAndView();
+        Product product = productRepository.findById(productID).orElse(null);
+        if (product == null){
+            return new ModelAndView("redirect:/admin/products");
+        }
+        modelAndView.addObject("product", product);
+        modelAndView.addObject("productStatuss", ProductStatus.values());
+        modelAndView.setViewName("admin/products/editProduct");
+        return modelAndView;
     }
-
-    //    @DeleteMapping("/products/delete/{id}")
-    @GetMapping("/products/delete/{id}")
-    public String addCandidate(@PathVariable("id") long id) {
-        Product product = productRepository.findById(id).orElse(new Product());
-        productRepository.delete(product);
-        return "redirect:/products";
+    @PostMapping("/edit")
+    public String handleEditProduct(@ModelAttribute("product") Product product, Model model){
+        try {
+            productRepository.save(product);
+        } catch (Exception e){
+            model.addAttribute("errUpdProduct", "Cập nhật thất bại!");
+            return "admin/products/editProduct";
+        }
+        return "redirect:/admin/products";
     }
 
 }
